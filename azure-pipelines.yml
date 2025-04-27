@@ -1,0 +1,69 @@
+pool: Agentpool21
+
+trigger: none
+
+stages:
+  - stage: initandPlan
+    displayName: initandPlan
+    jobs:
+    - job: initandPlan
+      displayName: initandPlan
+      steps:
+      - task: TerraformInstaller@1
+        inputs:
+          terraformVersion: 'latest'
+      - task: TerraformTaskV4@4
+        displayName: "initandPlan"
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/todoapp_infra'
+          backendServiceArm: 'TESTSC21'
+          backendAzureRmResourceGroupName: 'rgbackend12'
+          backendAzureRmStorageAccountName: 'stbackend122'
+          backendAzureRmContainerName: 'container12'
+          backendAzureRmKey: 'dev.terraform.tfstate'
+      - task: TerraformTaskV4@4
+        displayName: "plan"
+        inputs:
+          provider: 'azurerm'
+          command: 'plan'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/todoapp_infra'
+          environmentServiceNameAzureRM: 'TESTSC21' 
+  - stage: apply
+    displayName: apply
+    jobs:
+    - job: manualvalidationjob 
+      #timeoutInMinutes: 90
+      displayName: manualvalidationjob
+      pool: server
+      steps:
+      - task: ManualValidation@1
+        inputs:
+          notifyUsers: 'kuberdev66666@gmail.com'
+          approvers: 'kuberdev66666@gmail.com'
+          instructions: 'pls approve'
+    - job: apply
+      dependsOn: manualvalidationjob
+      displayName: apply  
+      steps:
+      - task: TerraformInstaller@1
+        inputs:
+          terraformVersion: 'latest'
+      - task: TerraformTaskV4@4
+        displayName: "initandPlan"
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/todoapp_infra'
+          backendServiceArm: 'TESTSC21'
+          backendAzureRmResourceGroupName: 'rgbackend12'
+          backendAzureRmStorageAccountName: 'stbackend122'
+          backendAzureRmContainerName: 'container12'
+          backendAzureRmKey: 'dev.terraform.tfstate'
+      - task: TerraformTaskV4@4
+        inputs:
+          provider: 'azurerm'
+          command: 'apply'
+          workingDirectory: '$(System.DefaultWorkingDirectory)/todoapp_infra'
+          environmentServiceNameAzureRM: 'TESTSC21' 
